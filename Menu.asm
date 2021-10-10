@@ -91,7 +91,28 @@ OP1:
     int 21h
     call pausa
     call limpiar
-    jmp menu
+    mov ah, 09h
+    mov dx, offset smob
+    int 21h
+    mov ah, 01h; con 01 muestra el dato
+    ;mov ah, 07h; con 07 no mostrara el dato
+    int 21h
+    ; si al es mayor a 33h (a 3), salta
+    cmp al, 33h
+    ja error
+    ; si es menor a 31h (a 1), salta
+    cmp al, 31h
+    jb error
+    
+    cmp al,31h;compara si es 1
+    jz SOP1;salta a SOP1 si al=31h
+    
+    cmp al,32h;compara si es 2
+    jz SOP2;salta a SOP2 si al=32h
+    
+    cmp al,33h;compara si es 3
+    jz SOP3; salta a SOP3 si al=33h
+    
     
     
 OP2:
@@ -102,7 +123,7 @@ OP2:
     int 21h
     call pausa
     call limpiar
-    jmp menu
+    jmp juego
     
 OP3:
     call salto
@@ -112,7 +133,7 @@ OP3:
     int 21h
     call pausa
     call limpiar
-    jmp menu
+    jmp manip
 
 OP4:
     call salto
@@ -122,7 +143,7 @@ OP4:
     int 21h
     call pausa
     call limpiar
-    jmp menu
+    jmp recur
 
 OP5:
     call salto
@@ -135,7 +156,151 @@ OP5:
     ret;regresar para salir
     ;si esto no funciona, hacer un jmp a una opcion hasta el final del programa
         
-;otras etiquetas de submenus
+;otras etiquetas de submenus                
+
+SOP1:
+;Subopcion para resta
+call salto
+call limpiar       
+;Bienvenida e ingreso numero 1
+mov ah, 09h
+mov dx, offset smre
+int 21h
+mov ah, 01h; con 01 muestra el dato
+;mov ah, 07h; con 07 no mostrara el dato
+int 21h
+mov d1r,al
+call salto
+;Termina ingreso numero 1
+mov ah, 09h
+mov dx, offset smre2
+int 21h
+mov ah, 01h; con 01 muestra el dato
+;mov ah, 07h; con 07 no mostrara el dato
+int 21h
+mov d2r,al
+mov bl,d2r
+call salto
+;Termina ingreso numero 2
+;Calculo de la resta:
+sub d1r,bl
+mov ah, 09h
+mov dx, offset smre3
+int 21h
+;Termina resultado de resta
+call pausa
+call salto
+call limpiar       
+
+jmp menu
+
+SOP2:
+;Subopcion para cuadrado
+call salto
+call limpiar       
+mov ah, 09h
+mov dx, offset smcd
+int 21h         
+;Recibimos el dato ingresado por el usuario
+mov ah, 01h; con 01 muestra el dato
+;mov ah, 07h; con 07 no mostrara el dato
+int 21h
+;Almacenamos en dcu el dato ingresado por el usuario
+mov dcu,al                                          
+;Eliminamos las decenas del dato ingresado 
+and dcu,00001111b                          
+;Limpiamos registros y copiamos dato para realizar cuadrado a traves de mul
+mov al,0h
+mov ah,0h
+mov al,dcu
+mov bh,dcu
+;Se efectua el cuadrado
+mul bh
+;Almacenamos en dcu1 el resultado del 
+mov dcu1,ax
+call salto
+call pausa    
+call salto
+call limpiar       
+jmp menu
+
+SOP3:
+;Subopcion para base 3
+call salto
+call limpiar       
+mov ah, 09h
+mov dx, offset smb3
+int 21h
+call pausa
+call salto
+call limpiar       
+jmp menu     
+
+juego:
+;Opcion para realizar juego
+call salto
+call limpiar       
+mov ah, 09h
+mov dx, offset smjg
+int 21h
+call pausa
+call salto
+call limpiar       
+jmp menu     
+
+manip:
+;Opcion para realizar manipulacion de cadena
+mov ah, 09h
+mov dx, offset smsc
+int 21h
+call pausa
+call salto
+call limpiar       
+jmp menu     
+
+recur:
+;Opcion para realizar opcion de recurrencia
+mov ah, 09h
+mov dx, offset smor
+int 21h               
+;Ingresa datos el usuario
+;Ingresa numero inicial
+mov ah, 09h
+mov dx, offset sini
+int 21h            
+;Recibimos el dato ingresado por el usuario
+mov ah, 01h; con 01 muestra el dato
+;mov ah, 07h; con 07 no mostrara el dato
+int 21h
+;Almacenamos en dcu el dato ingresado por el usuario
+mov nini,al                                          
+;Ingresa numero a sumar
+mov ah, 09h
+mov dx, offset ssum
+int 21h               
+;Recibimos el dato ingresado por el usuario
+mov ah, 01h; con 01 muestra el dato
+;mov ah, 07h; con 07 no mostrara el dato
+int 21h                           
+;Almacenamos en dcu el dato ingresado por el usuario
+mov nsum,al                                          
+;Ingresa cantidad de terminos a visualizar
+mov ah, 09h
+mov dx, offset ster
+int 21h                  
+;Recibimos el dato ingresado por el usuario
+mov ah, 01h; con 01 muestra el dato
+;mov ah, 07h; con 07 no mostrara el dato
+int 21h   
+call salto
+;Almacenamos en dcu el dato ingresado por el usuario
+mov nter,al       
+;Finaliza ingreso de datos                                   
+call pausa
+call salto
+call limpiar       
+jmp menu     
+
 
 ret
 ;variables
@@ -153,6 +318,25 @@ sm4 db "Operaciones de Recurrencia$"
 sm5 db "Adios$"
 erro db "Error, seleccione de nuevo$"
 preT db "Presione una tecla para continuar$"
+smob db "Ingrese la operacion que desea",10,13,"1.Resta",10,13,"2.Cuadrado",10,13,"3.Conversion a base3",10,13,"$"
+smjg db "Bienvenido al juego de adivinar una letra, numero o simbolo",10,13,"$"
+smsc db "Bienvenido a manipulacion de cadena",10,13,"$"
+smor db "Bienvenido a opciones de recurrencia, Serie Aritmetica",10,13,"$"
+sini db 10,13,"Ingrese el numero inicial: ",10,13,"$"
+ssum db 10,13,"Ingrese el numero a sumar al numero inicial: ",10,13,"$"
+ster db 10,13,"Ingrese la cantidad de terminos a visualizar: ",10,13,"$" 
+smre db "Bienvenido a resta, ingrese el primer numero: ",10,13,"$"
+smre2 db "Ingrese el segundo numero: ",10,13,"$"
+smre3 db "El resultado de el primer numero menos el segundo es: ",10,13,"$"
+smcd db "Bienvenido a cuadrado, ingrese 1 numero: ",10,13,"$"
+smb3 db "Bienvenido a conversor a base 3, ingrese el numero: ",10,13,"$"
+d1r db ? ;Variable para almacenar dato 1 y resultado de la resta
+d2r db ? ;VAriable para almacenar dato 2 y numero que resta a dato 1
+dcu db ? ;Variable para almacenar dato para el cuadrado
+dcu1 dw ?;Variable para almacenar el resultado del dato al cuadrado                                                                 
+nini db ? ;Variable para pedir numero inicial serie aritmetica
+nsum db ? ;Variable para pedir numero a sumar serie aritmetica
+nter db ? ;Variable para pedir cantidad de terminos serie aritmetica
 
 ;Procedimientos
 
