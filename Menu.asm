@@ -188,6 +188,14 @@ mov ah, 09h
 mov dx, offset smre3
 int 21h
 ;Termina resultado de resta
+;imprimir resultado resta (de momento solo esta para un digito)
+mov dl, d1r; traemos el valor resultado
+OR dl, 00110000b;convertimos a ascii antes de imprimir
+mov dh, 00h
+mov ah, 02h;modo para imprimir un solo caracter
+mov al, 00h
+int 21h
+
 call pausa
 call salto
 call limpiar       
@@ -218,6 +226,41 @@ mov bh,dcu
 mul bh
 ;Almacenamos en dcu1 el resultado del 
 mov dcu1,ax
+call salto
+;imprimir cadena indicatoria:
+mov ah, 09h
+mov al, 00h
+mov dx, offset resCuadrado
+int 21h
+
+;imprimir resultado
+;PENDIENTE: Ajustar el resultado para que se puedan
+;tener los ascii de las decenas y las unidades
+;por aparte
+;y luego mostrarlas
+mov ax, dcu1   ; como al hacer salto se modificn
+;los registros de ax, copiamos de regreso el valor
+;original que se calculo
+;luego hacemos el
+aam;ajuste ascci para la multiplicaicon
+;en ah van las decenas
+;en al van las unidades
+OR ah, 30h;agregamos el 3 para convertir a ascii
+OR al, 30h;agregamos el 3 para convertir a ascii
+;en este momento ya tenemos el resultado en ascii del cuadrado en el registro ax
+;lo que haremos sera imprimir caracter por caracter, para eso:
+mov dl, ah; copiamos el valor de las decenas en dl
+mov dh, al; como al se modificara al interrumpir pantalla, 
+;copiaremos el valor de las unidades a dh, el cual no se modificara
+
+mov ah, 02h; en este modo llamara a la interrupcion para imprimir solo un caracter
+int 21h;imprimimos la decena
+;ahora usaremos la copia del valor de al que tenemos en dh para imprimir las unidades
+mov dl, dh; copiamos el valor de dh en dl (dl contiene el caracter a mostrar en pantalla)
+mov ah, 02h;valga redundancia igual volvemos a indicar que ah va en modo 02h 
+mov al, 00h
+int 21h; imprimimos las unidades
+
 call salto
 call pausa    
 call salto
@@ -250,13 +293,57 @@ jmp menu
 
 manip:
 ;Opcion para realizar manipulacion de cadena
-mov ah, 09h
-mov dx, offset smsc
-int 21h
-call pausa
-call salto
-call limpiar       
-jmp menu     
+    mov ah, 09h
+    mov dx, offset smsc
+    int 21h
+    ;este es el mensaje inicial
+    mov di, 2000h; empezare desde aqui para no topar con el codigo
+    mov [di], '%';con este indicare el inicio de la cadena
+    jmp pideCar;pasamos a pedir caracter
+
+pideCar:    
+    inc di;incremento la pos de memo donde guardo el resultado
+    mov ah, 01h
+    mov al, 00h
+    int 21h;pido caracter
+    ;ahora que esta en al, comparo si no es %, y si no lo es, continuo
+    cmp al, 25h
+    je manip2; si lo es, ahora debo mostrar la cadena invetida
+    ; si no, sigo
+    mov [di],al
+    jmp pideCar
+
+manip2:
+    call salto
+    call salto
+    ;mensaje para decir esta es la cadena invertida:
+    mov ah, 09h
+    mov al, 00h
+    mov dx, offset cadInv
+    int 21h;
+    
+    dec di;como di aumento para el % final, pero este no se guardo
+    ;no es necesario acceder a esa posicion
+    ;configura ah para imprimir
+    mov ah, 02h
+    mov al, 00h
+    jmp imprInv;imprime la cadena invertida
+    
+imprInv:
+    mov dl, [di]
+    cmp dl, 25h;compara si no es el % del inicio
+    je finManip; si lo es, salta al final
+    ;si no, sigue imprimiendo
+    int 21h;imprime el caracter
+    dec di;decrementa di
+    jmp imprInv;ahora con la siguiente
+
+finManip:;finaliza la manipulacion de cadenas
+    call salto
+    call pausa
+    call salto
+    call limpiar       
+    jmp menu     
 
 recur:
 ;Opcion para realizar opcion de recurrencia
@@ -292,17 +379,67 @@ int 21h
 mov ah, 01h; con 01 muestra el dato
 ;mov ah, 07h; con 07 no mostrara el dato
 int 21h   
-call salto
 ;Almacenamos en dcu el dato ingresado por el usuario
-mov nter,al       
-;Finaliza ingreso de datos                                   
-call pausa
+mov nter,al
 call salto
-call limpiar       
-jmp menu     
+       
+;Finaliza ingreso de datos                                   
+;ahora a sumar y mostrar
+;tratarlo como decenas
+;nini # inicial
+;nsum # a sumar
+;nter cantidad
+mov cl, 00h;debera llegar a ser igual al nter
+mov bl, nini; el registro que llevara la cuenta del #actual
+mov bh, 00h
+mov dh, nsum; el registro que llevara el # a sumar
+;pasamos los datos de ascii a #
+mov dl, nter
+AND dl, 00001111b
+mov nter, dl;ahora el contador ya tendra el # como tal
 
+AND bl, 00001111b;dejamos el num inicial como numero
 
-ret
+AND dh, 00001111b
+mov nsum, dh;ahora el # a sumar ya esta en numero
+
+call salto
+;ahora toca a empezar la suma
+jmp rec1
+
+rec1:
+    inc cl;incremento el contador
+    add bl, nsum;el num actual + el num a sumar
+    mov ax, bx ; copiamos los valores de bx en ax para el ajuste
+    aaa;ajuste a la suma
+    ;ahora en AH tendremos decenas y en AL unidades
+    ;ajustamos a Ascii
+    OR ah, 30h
+    OR al, 30h
+    mov [1],ah;pondremos en la pos 1 de memo el valor de las decenas
+    mov [2],al;el valor de las unidades en la pos 2 de memo
+    ;ahora imprimimos el resultado
+    mov ah, 02h
+    mov al, 00h
+    mov dl, [1];decenas primero
+    int 21h
+    mov dl, [2];unidades siguiente
+    int 21h
+    mov dl, 20h;espacio
+    int 21h
+    ;ahora que ya imprimimos todo, comparemos si cl es igual al contador
+    cmp cl, nter
+    je finRec;fin de recurrencia
+    ;si no es el fin, seguimos recurriendo
+    jmp rec1
+    
+finRec:
+    call salto   
+    call pausa
+    call salto
+    call limpiar       
+    jmp menu     
+;ret;? daba error de overflow?
 ;variables
 menuT db "Seleccione una opcion$"
 saltoRetorno db 10d,13d,"$"
@@ -320,7 +457,7 @@ erro db "Error, seleccione de nuevo$"
 preT db "Presione una tecla para continuar$"
 smob db "Ingrese la operacion que desea",10,13,"1.Resta",10,13,"2.Cuadrado",10,13,"3.Conversion a base3",10,13,"$"
 smjg db "Bienvenido al juego de adivinar una letra, numero o simbolo",10,13,"$"
-smsc db "Bienvenido a manipulacion de cadena",10,13,"$"
+smsc db "Bienvenido a manipulacion de cadena",10,13,"Ingrese cadena a invertir, indique su final con el caracter %:",10,13, "$"
 smor db "Bienvenido a opciones de recurrencia, Serie Aritmetica",10,13,"$"
 sini db 10,13,"Ingrese el numero inicial: ",10,13,"$"
 ssum db 10,13,"Ingrese el numero a sumar al numero inicial: ",10,13,"$"
@@ -330,6 +467,8 @@ smre2 db "Ingrese el segundo numero: ",10,13,"$"
 smre3 db "El resultado de el primer numero menos el segundo es: ",10,13,"$"
 smcd db "Bienvenido a cuadrado, ingrese 1 numero: ",10,13,"$"
 smb3 db "Bienvenido a conversor a base 3, ingrese el numero: ",10,13,"$"
+resCuadrado db "El resultado del cuadrado es: $"
+cadInv db "La cadena invertida es: ",10,13,"$"
 d1r db ? ;Variable para almacenar dato 1 y resultado de la resta
 d2r db ? ;VAriable para almacenar dato 2 y numero que resta a dato 1
 dcu db ? ;Variable para almacenar dato para el cuadrado
