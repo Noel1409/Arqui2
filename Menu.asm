@@ -411,11 +411,13 @@ rec1:
     inc cl;incremento el contador
     add bl, nsum;el num actual + el num a sumar
     mov ax, bx ; copiamos los valores de bx en ax para el ajuste
-    aaa;ajuste a la suma
+    aam;ajuste a la suma
     ;ahora en AH tendremos decenas y en AL unidades
     ;ajustamos a Ascii
     OR ah, 30h
     OR al, 30h
+    ;aaa;ajuste a la suma
+    ;lo hago aca para ver que pasa
     mov [1],ah;pondremos en la pos 1 de memo el valor de las decenas
     mov [2],al;el valor de las unidades en la pos 2 de memo
     ;ahora imprimimos el resultado
