@@ -285,11 +285,225 @@ call salto
 call limpiar       
 mov ah, 09h
 mov dx, offset smjg
+int 21h;muestra el mensaje
+call salto;
+;calcular # al azar
+;mostrar una cadena
+;pedir el ingreso de una letra que sea la faltante
+;saltar segun el # de palabra mostrada
+
+;Primero mostramos los mensajes
+mov dx, offset msjJuego1;
 int 21h
-call pausa
-call salto
-call limpiar       
-jmp menu     
+;ahora generamos un # al azar para escoger entre los nombres 
+call salto;
+mov ax, 0000h
+int 1ah;interrupcion para obtener num del reloj
+;el resultado se guarda en DX
+;tomaremos solo en # mas bajo de DX y lo usaremos para ver las posibilidades
+;entre 0 a F
+AND dx, 000Fh;deja solo lo + bajo
+mov bx, dx ; copiamos el # en bx
+;y lo mostramos para ver si vamos bien
+;pero para eso lo ponemos en ASCII
+mov ax, 0000h
+mov ah, 02h
+OR dl,30h;para ascii / puede mostrar simbolos raros por los HEX
+int 21h
+;ahora debo ver que muestro
+mov ah, 09h;preparo para mostrar segun el azar
+;evaluo el valor en bl para ver que pkmn llamo
+cmp bl, 0h
+je pkmn0
+
+cmp bl, 1h
+je pkmn1
+
+cmp bl, 2h
+je pkmn2
+
+cmp bl, 3h
+je pkmn3
+
+cmp bl, 4h
+je pkmn4
+
+cmp bl, 5h
+je pkmn5
+
+cmp bl, 6h
+je pkmn6
+
+cmp bl, 7h
+je pkmn7
+
+cmp bl, 8h
+je pkmn8
+
+cmp bl, 9h
+je pkmn9
+
+cmp bl, 0ah
+je pkmnA
+
+cmp bl, 0bh
+je pkmnB     
+
+cmp bl, 0ch
+je pkmnC
+
+cmp bl, 0dh
+je pkmnD
+
+cmp bl, 0eh
+je pkmnE
+
+;el ultimo caso no lo evaluamos xq ya sabemos que si no salto antes
+;saltara ahora
+jmp pkmnF
+
+pkmn0:
+    mov dx, offset poke0
+    int 21h
+    mov bl, 'g';le indicamos la letra faltante para esta opcion
+    call salto
+    jmp finJuego
+                
+pkmn1:
+    mov dx, offset poke1
+    int 21h
+    mov bl, 'i'
+    call salto
+    jmp finJuego
+                
+pkmn2:
+    mov dx, offset poke2
+    int 21h
+    mov bl, 'a'
+    call salto
+    jmp finJuego
+    
+pkmn3:
+    mov dx, offset poke3
+    int 21h
+    mov bl, 't'
+    call salto
+    jmp finJuego
+
+pkmn4:
+    mov dx, offset poke4
+    int 21h
+    mov bl, 'u'
+    call salto
+    jmp finJuego
+
+pkmn5:
+    mov dx, offset poke5
+    int 21h
+    mov bl, 'a'
+    call salto
+    jmp finJuego
+
+pkmn6:
+    mov dx, offset poke6
+    int 21h
+    mov bl, 'e'
+    call salto
+    jmp finJuego
+
+pkmn7:
+    mov dx, offset poke7
+    int 21h
+    mov bl, 'e'
+    call salto
+    jmp finJuego
+
+pkmn8:
+    mov dx, offset poke8
+    int 21h
+    mov bl, 'a'
+    call salto
+    jmp finJuego
+
+pkmn9:
+    mov dx, offset poke9
+    int 21h
+    mov bl, 'o'
+    call salto
+    jmp finJuego
+
+pkmnA:
+    mov dx, offset pokeA
+    int 21h
+    mov bl, 'l'
+    call salto
+    jmp finJuego
+
+pkmnB:
+    mov dx, offset pokeB
+    int 21h
+    mov bl, 'g'
+    call salto
+    jmp finJuego
+
+pkmnC:
+    mov dx, offset pokeC
+    int 21h
+    mov bl, 'e'
+    call salto
+    jmp finJuego
+
+pkmnD:
+    mov dx, offset pokeD
+    int 21h
+    mov bl, 'c'
+    call salto
+    jmp finJuego
+
+pkmnE:
+    mov dx, offset pokeE
+    int 21h
+    mov bl, 'b'
+    call salto
+    jmp finJuego
+
+pkmnF:
+    mov dx, offset pokeF
+    int 21h
+    mov bl, 'g'
+    call salto
+    jmp finJuego
+
+finJuego:;usado para pedir caracter 
+    mov ah, 01h;pide dato
+    int 21h
+    
+    ;el dato queda en al
+    mov cl, al
+    call salto
+    mov ah,09h
+    mov al,00h
+    ;ahora validamos si acerto o si no...
+    cmp cl,bl;validamos el dato que puso con el que habiamos dicho que era en las opciones
+    je acerto; si son iguales acerto
+    jmp noAcerto; si no son iguales no acerto
+
+acerto:
+    ;mostrar cadena de acerto
+    mov dx, offset YESJ
+    int 21h
+    jmp SalirJuego ; y salir del juego    
+
+noAcerto:
+    mov dx, offset NOJ
+    int 21h
+    jmp SalirJuego;    
+
+SalirJuego:    
+    call pausa
+    call salto
+    call limpiar       
+    jmp menu
 
 manip:
 ;Opcion para realizar manipulacion de cadena
@@ -458,7 +672,7 @@ sm5 db "Adios$"
 erro db "Error, seleccione de nuevo$"
 preT db "Presione una tecla para continuar$"
 smob db "Ingrese la operacion que desea",10,13,"1.Resta",10,13,"2.Cuadrado",10,13,"3.Conversion a base3",10,13,"$"
-smjg db "Bienvenido al juego de adivinar una letra, numero o simbolo",10,13,"$"
+smjg db "Bienvenido al juego de adivinar el simbolo faltante:",10,13,"$"
 smsc db "Bienvenido a manipulacion de cadena",10,13,"Ingrese cadena a invertir, indique su final con el caracter %:",10,13, "$"
 smor db "Bienvenido a opciones de recurrencia, Serie Aritmetica",10,13,"$"
 sini db 10,13,"Ingrese el numero inicial: ",10,13,"$"
@@ -471,6 +685,25 @@ smcd db "Bienvenido a cuadrado, ingrese 1 numero: ",10,13,"$"
 smb3 db "Bienvenido a conversor a base 3, ingrese el numero: ",10,13,"$"
 resCuadrado db "El resultado del cuadrado es: $"
 cadInv db "La cadena invertida es: ",10,13,"$"
+msjJuego1 db "Debe indicar la letra que falta en el nombre del pokemon:",10,13,"Solo tiene un intento, ingrese la letra en minusculas",10,13,"$"
+poke1 db "P?kachu",10,13,"$"
+poke2 db "Ch?riz?rd",10,13,"$"
+poke3 db "Squir?le",10,13,"$"
+poke4 db "B?lbasa?r",10,13,"$"
+poke5 db "Di?lg?",10,13,"$"
+poke6 db "M?w",10,13,"$"
+poke7 db "??v??",10,13,"$"
+poke8 db "M?gik?rp",10,13,"$"
+poke9 db "Sn?rlax",10,13,"$"
+pokeA db "Abso?",10,13,"$"
+pokeB db "Dra?onite",10,13,"$"
+pokeC db "Gard?voir",10,13,"$"
+pokeD db "Lu?ario",10,13,"$"
+pokeE db "Um?reon",10,13,"$"
+pokeF db "Gen?ar",10,13,"$"
+poke0 db "Ji??lypuff",10,13,"$"
+YESJ db "Acierto! Felicidades!",10,13,"$"
+NOJ db "Fallo! Mala suerte!",10,13,"$"
 d1r db ? ;Variable para almacenar dato 1 y resultado de la resta
 d2r db ? ;VAriable para almacenar dato 2 y numero que resta a dato 1
 dcu db ? ;Variable para almacenar dato para el cuadrado
@@ -539,3 +772,13 @@ limpiar PROC
     
     ret
 limpiar ENDP
+
+;pokemon PROC
+    ;elegira una cadena de pkmn y la muestra
+;    mov ah, 09h
+;    mov dx, offset poke0
+;    int 21h
+;    call salto
+    
+;    ret
+;pokemon ENDP
