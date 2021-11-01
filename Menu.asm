@@ -151,6 +151,9 @@ OP5:
     mov ah, 09h
     mov dx, offset sm5
     int 21h
+    ;limpiar bandera de overflow
+    mov ax, 0001h
+    add ax, 0001h
     call pausa
     call limpiar
     ret;regresar para salir
@@ -306,10 +309,10 @@ AND dx, 000Fh;deja solo lo + bajo
 mov bx, dx ; copiamos el # en bx
 ;y lo mostramos para ver si vamos bien
 ;pero para eso lo ponemos en ASCII
-mov ax, 0000h
-mov ah, 02h
-OR dl,30h;para ascii / puede mostrar simbolos raros por los HEX
-int 21h
+;mov ax, 0000h
+;mov ah, 02h
+;OR dl,30h;para ascii / puede mostrar simbolos raros por los HEX
+;int 21h
 ;ahora debo ver que muestro
 mov ah, 09h;preparo para mostrar segun el azar
 ;evaluo el valor en bl para ver que pkmn llamo
@@ -500,6 +503,25 @@ noAcerto:
     jmp SalirJuego;    
 
 SalirJuego:    
+    call salto
+    ;preguntar si desea salir de a de veras
+        ;mostrar string
+    mov ah, 09h
+    mov al, 00h
+    mov dx, offset confirmSalir
+    int 21h
+    ;pide car
+    mov ah, 01h
+    int 21h
+    mov cl,al
+    call salto
+    ;comparar si es de seguir, jmp al inicio
+    cmp cl, '1'    
+    je juego
+    ;si no, jmp a salir
+    jmp SalirJuegoDef
+
+SalirJuegoDef:    
     call pausa
     call salto
     call limpiar       
@@ -704,6 +726,7 @@ pokeF db "Gen?ar",10,13,"$"
 poke0 db "Ji??lypuff",10,13,"$"
 YESJ db "Acierto! Felicidades!",10,13,"$"
 NOJ db "Fallo! Mala suerte!",10,13,"$"
+confirmSalir db "Desea probar con otro nuevo pokemon?",10,13,"Ingrese 1 si desea salir",10,13,"$"
 d1r db ? ;Variable para almacenar dato 1 y resultado de la resta
 d2r db ? ;VAriable para almacenar dato 2 y numero que resta a dato 1
 dcu db ? ;Variable para almacenar dato para el cuadrado
