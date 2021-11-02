@@ -389,10 +389,87 @@ call limpiar
 mov ah, 09h
 mov dx, offset smb3
 int 21h
+;convesrsion
+;pide 2 digitos
+mov ah, 09h
+mov dx, offset cbb3
+int 21h
+;pide 2 veces
+mov ah, 01h
+mov al, 00h
+int 21h
+mov dh, al;decena
+;validacion
+cmp al,30h  ;comparamos si es menor a 0, ingreso un numero no valido
+jb numerr3  ;numero invalido 
+cmp al,39h  ;comparamos si es mayor a 9, ingreso un numero no valido
+ja numerr3  ;numero invalido
+int 21h
+mov dl, al;unidad
+;validacion
+cmp al,30h  ;comparamos si es menor a 0, ingreso un numero no valido
+jb numerr3  ;numero invalido 
+cmp al,39h  ;comparamos si es mayor a 9, ingreso un numero no valido
+ja numerr3  ;numero invalido
+AND dh, 0Fh
+AND dl, 0Fh
+mov ax, 0000h
+mov al, dh;movemos las decenas
+mov bl, 10d
+mul bl; multiplicamos por 10 para tener la decena
+add al, dl ; le sumamos la unidad
+;ahora ya tenemos el numero de 2 digitos
+;lo copiamos a cl
+mov cl, al
+call salto
+mov ah, 09h;
+mov al, 00h;
+mov dx, offset cRES
+int 21h
+;ahora empezamos la operacion
+mov ax, 0000h
+mov dx, 0000h
+mov di, 3000h; en la dir 3001 guardaremos el #
+mov [di],'%'
+jmp bb3; recurrente hasta que se termine de dividir
+
+bb3:
+inc di
+mov al, cl;copiamos el valor que nos quedo a al
+mov ch, 03h;vamos a convertir a base 3
+div ch; dividimos al entre 3
+mov dl, ah;el residuo se guarda en ah, lo copiamos a dl
+;copiamos el resultado de la division a cl
+mov cl, al
+;copiamos a memoria para luego mostrar invertidos los
+;residuos
+OR dl,30h;pasamos el residuo a ascii (el residuo solo tomara valor de 0 a 3)
+mov [di], dl;el ascii del residuo
+;ahora analizamos si seguir diviendo
+mov ah,00h ; lo regresamos a 0 para que no cause problema
+mov al, cl ; regresamos el dato que nos queda a al
+cmp al, 00h ; si al es 0, ya termino de dividir
+je salbb3
+;de lo contrario seguimos convirtiendo
+jmp bb3
+
+salbb3:
+mov ah, 02h
+mov dl, [di]
+cmp dl, '%'
+je sFbb3
+; si es igual a % para
+; si no sigue mostrando
+int 21h;
+dec di
+jmp salbb3
+
+
+sFbb3:
 call pausa
 call salto
 call limpiar       
-jmp menu     
+jmp menu        
 
 juego:
 ;Opcion para realizar juego
@@ -693,7 +770,17 @@ finManip:;finaliza la manipulacion de cadenas
     call limpiar       
     jmp menu     
 
+numerr4:;Redirige a recurrencia nuevamente
+call salto
+call limpiar       
+mov ah, 09h
+mov dx, offset inval ;Variable que indica ingreso de un numero invalido
+int 21h
+call pausa
+jmp recur
+ 
 recur:
+call limpiar
 ;Opcion para realizar opcion de recurrencia
 mov ah, 09h
 mov dx, offset smor
@@ -707,6 +794,11 @@ int 21h
 mov ah, 01h; con 01 muestra el dato
 ;mov ah, 07h; con 07 no mostrara el dato
 int 21h
+cmp al,30h  ;comparamos si es menor a 0, ingreso un numero no valido
+jb numerr4  ;numero invalido 
+cmp al,39h  ;comparamos si es mayor a 9, ingreso un numero no valido
+ja numerr4  ;numero invalido 
+
 ;Almacenamos en dcu el dato ingresado por el usuario
 mov nini,al                                          
 ;Ingresa numero a sumar
@@ -716,7 +808,12 @@ int 21h
 ;Recibimos el dato ingresado por el usuario
 mov ah, 01h; con 01 muestra el dato
 ;mov ah, 07h; con 07 no mostrara el dato
-int 21h                           
+int 21h
+cmp al,30h  ;comparamos si es menor a 0, ingreso un numero no valido
+jb numerr4  ;numero invalido 
+cmp al,39h  ;comparamos si es mayor a 9, ingreso un numero no valido
+ja numerr4  ;numero invalido                            
+
 ;Almacenamos en dcu el dato ingresado por el usuario
 mov nsum,al                                          
 ;Ingresa cantidad de terminos a visualizar
@@ -726,7 +823,11 @@ int 21h
 ;Recibimos el dato ingresado por el usuario
 mov ah, 01h; con 01 muestra el dato
 ;mov ah, 07h; con 07 no mostrara el dato
-int 21h   
+int 21h
+cmp al,30h  ;comparamos si es menor a 0, ingreso un numero no valido
+jb numerr4  ;numero invalido 
+cmp al,39h  ;comparamos si es mayor a 9, ingreso un numero no valido
+ja numerr4  ;numero invalido    
 ;Almacenamos en dcu el dato ingresado por el usuario
 mov nter,al
 call salto
@@ -753,7 +854,9 @@ mov nsum, dh;ahora el # a sumar ya esta en numero
 
 call salto
 ;ahora toca a empezar la suma
-jmp rec1
+cmp nter,00h
+jne rec1
+jmp finRec
 
 rec1:
     inc cl;incremento el contador
@@ -838,7 +941,7 @@ pokeF db "Gen?ar",10,13,"$"
 poke0 db "Ji??lypuff",10,13,"$"
 YESJ db "Acierto! Felicidades!",10,13,"$"
 NOJ db "Fallo! Mala suerte!",10,13,"$"
-confirmSalir db "Desea probar con otro nuevo pokemon?",10,13,"Ingrese 1 si desea salir",10,13,"$"
+confirmSalir db "Desea probar con otro nuevo pokemon?",10,13,"Ingrese 1 si desea volver a jugar, u otra tecla para salir",10,13,"$"
 d1r db ? ;Variable para almacenar dato decena 1 y resultado de la resta
 du1r db ?  ;Variable para almacenar dato unidad 1
 d2r db ? ;VAriable para almacenar dato decena 2 y numero que resta a dato 1
@@ -849,7 +952,9 @@ nini db ? ;Variable para pedir numero inicial serie aritmetica
 nsum db ? ;Variable para pedir numero a sumar serie aritmetica
 nter db ? ;Variable para pedir cantidad de terminos serie aritmetica
 inval db "Ingreso un numero fuera de rango",10,13,"$"
-
+cbb3 db "Ingrese un numero de 2 digitos",10,13,"$"
+cBV3 db ? ; variable para guardar el digito a convertir
+cRES db "El resultado es:",10,13,"$"
 ;Procedimientos
 
 salto PROC
@@ -888,7 +993,6 @@ limpiar PROC
     mov bh, 00h
     mov bl, 00h
     int 10h
-    
     ;limpiar pantalla
     mov ah, 06h
     mov al, 00h
@@ -899,7 +1003,6 @@ limpiar PROC
     mov dh, 24d ;fila fin 
     mov dl, 79d ;col fin 
     int 10h
-    
     ;cursor a posicion inicial
     mov ah, 02h
     mov al, 00h
@@ -907,16 +1010,5 @@ limpiar PROC
     mov dl, 00h
     mov bh, 00h
     int 10h
-    
     ret
 limpiar ENDP
-
-;pokemon PROC
-    ;elegira una cadena de pkmn y la muestra
-;    mov ah, 09h
-;    mov dx, offset poke0
-;    int 21h
-;    call salto
-    
-;    ret
-;pokemon ENDP
