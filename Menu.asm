@@ -169,34 +169,115 @@ call limpiar
 mov ah, 09h
 mov dx, offset smre
 int 21h
+
+;Pedimos la decena
 mov ah, 01h; con 01 muestra el dato
 ;mov ah, 07h; con 07 no mostrara el dato
 int 21h
 mov d1r,al
+cmp al,30h ;comparamos si es menor a 0, ingreso un numero no valido
+jb numerr  ;numero invalido 
+cmp al,39h ;comparamos si es mayor a 9, ingreso un numero no valido
+ja numerr  ;numero invalido 
+and d1r,00001111b                          
+mov ch, d1r
+
+;Pedimos la unidad
+mov ah, 01h; con 01 muestra el dato
+;mov ah, 07h; con 07 no mostrara el dato
+int 21h
+mov du1r,al
+cmp al,30h ;comparamos si es menor a 0, ingreso un numero no valido
+jb numerr  ;numero invalido 
+cmp al,39h ;comparamos si es mayor a 9, ingreso un numero no valido
+ja numerr  ;numero invalido 
+;quitamos las decenas 
+and du1r,00001111b                          
+mov cl,du1r  
+;Efectuamos operacion x10 de la decena en decimal
+mov al,0h
+mov ah,0h
+mov al,10d
+mov bh,d1r
+;Se efectua la multiplicacion
+mul bh   
+;Guardamos en d1r el resultado de al
+mov d1r,al   
+;Suma para obtener el total del dato1
+add d1r,cl
+
 call salto
+
+
 ;Termina ingreso numero 1
 mov ah, 09h
 mov dx, offset smre2
 int 21h
+
+;Pedimos la decena dato2
 mov ah, 01h; con 01 muestra el dato
 ;mov ah, 07h; con 07 no mostrara el dato
 int 21h
 mov d2r,al
 mov bl,d2r
+cmp al,30h ;comparamos si es menor a 0, ingreso un numero no valido
+jb numerr  ;numero invalido 
+cmp al,39h ;comparamos si es mayor a 9, ingreso un numero no valido
+ja numerr  ;numero invalido 
+;Quitar decenas
+and d2r,00001111b                          
+mov dh,d2r
+
+;Pedimos la unidad  dato2
+mov ah, 01h; con 01 muestra el dato
+;mov ah, 07h; con 07 no mostrara el dato
+int 21h
+mov du2r,al
+mov bl,d2r
+cmp al,30h ;comparamos si es menor a 0, ingreso un numero no valido
+jb numerr  ;numero invalido 
+cmp al,39h ;comparamos si es mayor a 9, ingreso un numero no valido
+ja numerr  ;numero invalido 
+and du2r,00001111b                          
+mov dl,du2r
+;Efectuamos operacion x10 de la decena en decimal
+mov al,0h
+mov ah,0h
+mov al,10d
+mov bh,d2r
+;Se efectua la multiplicacion
+mul bh   
+;Guardamos en d1r el resultado de al
+mov d2r,al   
+;Suma para obtener el total del dato1
+add d2r,dl
+mov bl,d2r
 call salto
-;Termina ingreso numero 2
+;Termina ingreso numero 2 
+;Comparamos que el segundo numero no sea mayor a el primer numero para evitar numeros < 0
+cmp bl,d1r
+ja numerr
 ;Calculo de la resta:
 sub d1r,bl
+mov al,d1r
+mov ah,00h
+aam
+mov bh,ah
+mov bl,al
 mov ah, 09h
 mov dx, offset smre3
 int 21h
 ;Termina resultado de resta
 ;imprimir resultado resta (de momento solo esta para un digito)
-mov dl, d1r; traemos el valor resultado
-OR dl, 00110000b;convertimos a ascii antes de imprimir
+;mov dl, d1r; traemos el valor resultado
+OR bh, 00110000b;convertimos a ascii antes de imprimir
+OR bl, 00110000b;convertimos a ascii antes de imprimir
 mov dh, 00h
 mov ah, 02h;modo para imprimir un solo caracter
 mov al, 00h
+mov dl,bh
+int 21h  
+mov dl,bl  ;Mostramos las unidades
 int 21h
 
 call pausa
@@ -204,6 +285,33 @@ call salto
 call limpiar       
 
 jmp menu
+
+numerr:;Redirige a resta nuevamente
+call salto
+call limpiar       
+mov ah, 09h
+mov dx, offset inval ;Variable que indica ingreso de un numero invalido
+int 21h
+call pausa
+jmp SOP1         
+
+numerr2:;Redirige a cuadrado nuevamente
+call salto
+call limpiar       
+mov ah, 09h
+mov dx, offset inval ;Variable que indica ingreso de un numero invalido
+int 21h
+call pausa
+jmp SOP2         
+
+numerr3:;Redirige a base3 nuevamente
+call salto
+call limpiar       
+mov ah, 09h
+mov dx, offset inval ;Variable que indica ingreso de un numero invalido
+int 21h
+call pausa
+jmp SOP3         
 
 SOP2:
 ;Subopcion para cuadrado
@@ -218,6 +326,10 @@ mov ah, 01h; con 01 muestra el dato
 int 21h
 ;Almacenamos en dcu el dato ingresado por el usuario
 mov dcu,al                                          
+cmp al,30h  ;comparamos si es menor a 0, ingreso un numero no valido
+jb numerr2  ;numero invalido 
+cmp al,39h  ;comparamos si es mayor a 9, ingreso un numero no valido
+ja numerr2  ;numero invalido 
 ;Eliminamos las decenas del dato ingresado 
 and dcu,00001111b                          
 ;Limpiamos registros y copiamos dato para realizar cuadrado a traves de mul
@@ -727,13 +839,16 @@ poke0 db "Ji??lypuff",10,13,"$"
 YESJ db "Acierto! Felicidades!",10,13,"$"
 NOJ db "Fallo! Mala suerte!",10,13,"$"
 confirmSalir db "Desea probar con otro nuevo pokemon?",10,13,"Ingrese 1 si desea salir",10,13,"$"
-d1r db ? ;Variable para almacenar dato 1 y resultado de la resta
-d2r db ? ;VAriable para almacenar dato 2 y numero que resta a dato 1
+d1r db ? ;Variable para almacenar dato decena 1 y resultado de la resta
+du1r db ?  ;Variable para almacenar dato unidad 1
+d2r db ? ;VAriable para almacenar dato decena 2 y numero que resta a dato 1
+du2r db ?  ;Variable para almacenar dato unidad 2
 dcu db ? ;Variable para almacenar dato para el cuadrado
 dcu1 dw ?;Variable para almacenar el resultado del dato al cuadrado                                                                 
 nini db ? ;Variable para pedir numero inicial serie aritmetica
 nsum db ? ;Variable para pedir numero a sumar serie aritmetica
 nter db ? ;Variable para pedir cantidad de terminos serie aritmetica
+inval db "Ingreso un numero fuera de rango",10,13,"$"
 
 ;Procedimientos
 
